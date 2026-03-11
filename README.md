@@ -77,18 +77,6 @@ python -m http.server 8000
 # Then open http://localhost:8000
 ```
 
----
-
-## 🌐 Deploy to GitHub Pages
-
-1. Push this repo to GitHub (must be **Public**)
-2. Go to **Settings → Pages**
-3. Set Source to **`main` branch → / (root)**
-4. Click **Save** — live in ~60 seconds at:
-   `https://YOUR-USERNAME.github.io/critics-vs-consumers`
-
----
-
 ## 📦 Replace Simulated Data with Real Data
 
 This dashboard currently uses procedurally generated data. To use real data:
