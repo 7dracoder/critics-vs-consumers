@@ -8,13 +8,6 @@
 ![Plotly](https://img.shields.io/badge/Charts-Plotly.js-00e5ff?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-ffe600?style=for-the-badge)
 
----
-
-## 🕹️ Live Demo
-
-👉 **[View Dashboard]([(https://7dracoder.github.io/critics-vs-consumers/)](https://7dracoder.github.io/critics-vs-consumers/))**
-
----
 
 ## 📌 About
 
