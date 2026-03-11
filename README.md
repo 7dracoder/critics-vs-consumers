@@ -12,7 +12,7 @@
 
 ## 🕹️ Live Demo
 
-👉 **[View Dashboard]((https://7dracoder.github.io/critics-vs-consumers/))**
+👉 **[View Dashboard]([(https://7dracoder.github.io/critics-vs-consumers/)](https://7dracoder.github.io/critics-vs-consumers/))**
 
 ---
 
