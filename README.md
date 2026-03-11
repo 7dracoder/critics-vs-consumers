@@ -12,8 +12,7 @@
 
 ## 🕹️ Live Demo
 
-👉 **[View Dashboard](https://YOUR-USERNAME.github.io/critics-vs-consumers)**
-*(Replace with your actual GitHub Pages URL after deploying)*
+👉 **[View Dashboard]((https://7dracoder.github.io/critics-vs-consumers/))**
 
 ---
 
