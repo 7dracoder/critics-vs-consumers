@@ -285,9 +285,53 @@ footer{
 }
 footer span{color:var(--orange);animation:blink 2s step-end infinite;}
 @keyframes blink{50%{opacity:0;}}
+
+/* ── CSV LOADER OVERLAY ── */
+#loadOverlay{
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(10,10,8,.92);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:20px;
+  font-family:var(--font);
+}
+.load-title{font-size:18px;color:var(--bright);letter-spacing:4px;text-transform:uppercase;}
+.load-bar-wrap{width:280px;height:8px;background:var(--dim);border:1px solid var(--border);}
+.load-bar{height:100%;width:0%;background:var(--orange);transition:width .3s;box-shadow:0 0 8px rgba(255,106,0,.6);}
+.load-status{font-family:var(--mono);font-size:11px;color:var(--dimtext);letter-spacing:2px;text-align:center;}
+.load-fallback{
+  font-family:var(--mono);font-size:11px;color:var(--gold);
+  text-align:center;line-height:1.8;max-width:340px;
+}
+.load-fallback a{color:var(--orange);text-decoration:none;border-bottom:1px solid var(--orange);}
+.load-btn{
+  font-family:var(--font);font-size:13px;
+  background:var(--orange);color:#000;border:none;
+  padding:10px 24px;cursor:pointer;letter-spacing:3px;
+  border:2px solid var(--orange);
+}
+.load-btn:hover{background:transparent;color:var(--orange);}
 </style>
 </head>
 <body>
+
+<!-- CSV LOADER OVERLAY -->
+<div id="loadOverlay">
+  <div class="load-title">&#9632; Loading Intel...</div>
+  <div class="load-bar-wrap"><div class="load-bar" id="loadBar"></div></div>
+  <div class="load-status" id="loadStatus">Searching for vgsales_with_ratings.csv...</div>
+  <div class="load-fallback" id="loadFallback" style="display:none">
+    <b style="color:var(--orange)">CSV file not found.</b><br/>
+    Place <code style="color:var(--bright)">vgsales_with_ratings.csv</code> in the same folder as this file.<br/><br/>
+    Download it free from:<br/>
+    <a href="https://www.kaggle.com/datasets/rush4ratio/video-game-sales-with-ratings" target="_blank">
+      kaggle.com → Video Game Sales with Ratings
+    </a>
+    <br/><br/>
+    <button class="load-btn" onclick="useFallback()">&#9654; USE SIMULATED DATA INSTEAD</button>
+  </div>
+</div>
+
 
 <div id="alertbar">&#9632; MISSION BRIEFING &nbsp;|&nbsp; INTEL ACTIVE &nbsp;|&nbsp; CLASSIFIED: INFORMATION VISUALIZATION &nbsp;|&nbsp; &#9632;</div>
 
@@ -400,27 +444,144 @@ function rand(min,max){return Math.random()*(max-min)+min;}
 function randInt(min,max){return Math.floor(rand(min,max+1));}
 function pick(arr){return arr[randInt(0,arr.length-1)];}
 
-// Generate 2000 simulated games
-const RAW=[];
-for(let i=0;i<2000;i++){
-  const yr=randInt(1985,2016), genre=pick(GENRES), pub=pick(PUBLISHERS), plat=pick(PLATFORMS);
-  const genreBonus={Action:2,Shooter:3,Sports:4,RPG:1,Platform:5}[genre]||0;
-  const pubBonus={Nintendo:8,EA:4,Activision:5,Sony:3}[pub]||1;
-  const baseScore=55+genreBonus*2+pubBonus+rand(-10,10);
-  const cs=Math.min(99,Math.max(20,baseScore));
-  const cc=randInt(5,80); // critic count — used for dot size
-  const na=Math.max(0,rand(0,5)*(pub==='Nintendo'?2:1)*(genre==='Shooter'?1.5:1));
-  const eu=Math.max(0,rand(0,3));
-  const jp=Math.max(0,rand(0,2)*(genre==='RPG'?3:0.5));
-  const gs=na+eu+jp+rand(0,0.5);
-  RAW.push({yr,genre,pub,plat,cs,cc,na,eu,jp,gs});
+// ═══════════════════════════════════════════════
+// DATA — tries real CSV first, falls back to sim
+// ═══════════════════════════════════════════════
+const RAW = [];
+
+// ── SIMULATED FALLBACK (used if CSV not found) ──
+function generateSimData() {
+  function rand(min,max){return Math.random()*(max-min)+min;}
+  function randInt(min,max){return Math.floor(rand(min,max+1));}
+  function pick(arr){return arr[randInt(0,arr.length-1)];}
+  for(let i=0;i<2000;i++){
+    const yr=randInt(1985,2016), genre=pick(GENRES), pub=pick(PUBLISHERS), plat=pick(PLATFORMS);
+    const genreBonus={Action:2,Shooter:3,Sports:4,RPG:1,Platform:5}[genre]||0;
+    const pubBonus={Nintendo:8,EA:4,Activision:5,Sony:3}[pub]||1;
+    const baseScore=55+genreBonus*2+pubBonus+rand(-10,10);
+    const cs=Math.min(99,Math.max(20,baseScore));
+    const cc=randInt(5,80);
+    const na=Math.max(0,rand(0,5)*(pub==='Nintendo'?2:1)*(genre==='Shooter'?1.5:1));
+    const eu=Math.max(0,rand(0,3));
+    const jp=Math.max(0,rand(0,2)*(genre==='RPG'?3:0.5));
+    const gs=na+eu+jp+rand(0,0.5);
+    RAW.push({yr,genre,pub,plat,cs,cc,na,eu,jp,gs});
+  }
 }
 
-// Populate filters
-function populateSelect(id,arr){
-  const sel=document.getElementById(id);
-  arr.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o);});
+// ── CSV PARSER ──
+// Expects Kaggle file: vgsales_with_ratings.csv
+// Columns: Name, Platform, Year_of_Release, Genre, Publisher,
+//          NA_Sales, EU_Sales, JP_Sales, Other_Sales, Global_Sales,
+//          Critic_Score, Critic_Count, User_Score, User_Count, Developer, Rating
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
+  const idx = h => headers.indexOf(h);
+
+  const iYear=idx('Year_of_Release'), iGenre=idx('Genre'), iPub=idx('Publisher');
+  const iPlat=idx('Platform'), iNA=idx('NA_Sales'), iEU=idx('EU_Sales');
+  const iJP=idx('JP_Sales'), iGS=idx('Global_Sales');
+  const iCS=idx('Critic_Score'), iCC=idx('Critic_Count');
+
+  let parsed=0, skipped=0;
+  for(let i=1;i<lines.length;i++){
+    // handle quoted commas
+    const cols = lines[i].match(/(".*?"|[^,]+)(?=,|$)/g) || lines[i].split(',');
+    const clean = cols.map(c => c.replace(/^"|"$/g,'').trim());
+
+    const yr  = parseInt(clean[iYear]);
+    const cs  = parseFloat(clean[iCS]);
+    const cc  = parseInt(clean[iCC]) || 10;
+    const na  = parseFloat(clean[iNA]) || 0;
+    const eu  = parseFloat(clean[iEU]) || 0;
+    const jp  = parseFloat(clean[iJP]) || 0;
+    const gs  = parseFloat(clean[iGS]) || 0;
+    const genre = clean[iGenre] || '';
+    const pub   = clean[iPub]   || '';
+    const plat  = clean[iPlat]  || '';
+
+    // skip rows with missing critical fields
+    if(isNaN(yr)||yr<1980||yr>2020) { skipped++; continue; }
+    if(!genre||genre==='N/A')       { skipped++; continue; }
+    if(isNaN(cs)||cs<=0)            { skipped++; continue; }
+
+    RAW.push({yr, genre, pub, plat, cs, cc, na, eu, jp, gs});
+    parsed++;
+  }
+  return {parsed, skipped};
 }
+
+// ── PROGRESS HELPER ──
+function setProgress(pct, msg) {
+  document.getElementById('loadBar').style.width = pct + '%';
+  document.getElementById('loadStatus').textContent = msg;
+}
+
+// ── POPULATE SELECTS (called after data loaded) ──
+function populateFilters() {
+  const genres    = [...new Set(RAW.map(d=>d.genre))].filter(Boolean).sort();
+  const publishers= [...new Set(RAW.map(d=>d.pub))].filter(Boolean).sort();
+  const platforms = [...new Set(RAW.map(d=>d.plat))].filter(Boolean).sort();
+  populateSelect('genreFilter', genres);
+  populateSelect('pubFilter',   publishers);
+  populateSelect('platFilter',  platforms);
+}
+
+// ── FALLBACK (user chose sim data) ──
+function useFallback() {
+  setProgress(60, 'Generating simulated data...');
+  setTimeout(() => {
+    generateSimData();
+    setProgress(100, `Loaded ${RAW.length} simulated records.`);
+    populateFilters();
+    setTimeout(() => {
+      document.getElementById('loadOverlay').style.display = 'none';
+      updateRangeFill();
+      redrawAll();
+    }, 400);
+  }, 200);
+}
+
+// ── MAIN LOADER ──
+async function loadData() {
+  setProgress(10, 'Looking for vgsales_with_ratings.csv...');
+
+  try {
+    const resp = await fetch('vgsales_with_ratings.csv');
+    if (!resp.ok) throw new Error('File not found');
+
+    setProgress(30, 'File found — reading data...');
+    const text = await resp.text();
+
+    setProgress(60, 'Parsing CSV rows...');
+    // yield to browser so progress bar renders
+    await new Promise(r => setTimeout(r, 50));
+
+    const { parsed, skipped } = parseCSV(text);
+
+    if (parsed < 10) throw new Error('Too few valid rows parsed');
+
+    setProgress(85, `Parsed ${parsed} games (${skipped} skipped)...`);
+    await new Promise(r => setTimeout(r, 50));
+
+    populateFilters();
+    setProgress(100, `✔ ${parsed} games loaded from real dataset.`);
+
+    setTimeout(() => {
+      document.getElementById('loadOverlay').style.display = 'none';
+      updateRangeFill();
+      redrawAll();
+    }, 500);
+
+  } catch(err) {
+    setProgress(0, '');
+    document.getElementById('loadStatus').textContent = '';
+    document.getElementById('loadFallback').style.display = 'block';
+    console.warn('CSV load failed:', err.message);
+  }
+}
+
 populateSelect('genreFilter',GENRES);
 populateSelect('pubFilter',PUBLISHERS);
 populateSelect('platFilter',PLATFORMS);
@@ -712,9 +873,8 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
 });
 document.getElementById('clearBrush').addEventListener('click',()=>setBrush(null));
 
-// Initial render
-updateRangeFill();
-redrawAll();
+// Initial render — triggered by CSV loader
+loadData();
 
 </script>
 </body>
