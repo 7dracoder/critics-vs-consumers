@@ -68,8 +68,7 @@ Built for **Mini-Project 2** of an Information Visualization course, applying:
 critics-vs-consumers/
 │
 ├── index.html        ← Entire dashboard (self-contained, no build step)
-├── README.md         ← This file
-└── vercel.json       ← Optional: Vercel deployment config
+└──README.md         ← This file
 ```
 
 ---
