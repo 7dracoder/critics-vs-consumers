@@ -1,56 +1,90 @@
 # 🎮 Critics vs. Consumers
-### Video Game Market Intelligence Dashboard
+### *Who Really Decides a Game's Success?*
 
-> *Does a higher critic score actually sell more games? This dashboard finds out.*
+> **An interactive information visualization dashboard** exploring the relationship between critic scores, consumer sales, regional markets, and publisher performance across 2,000+ video game titles from 1985–2016.
 
-![Dashboard](https://img.shields.io/badge/Status-Live-00ff88?style=for-the-badge)
-![HTML](https://img.shields.io/badge/Built%20With-HTML%2FJS-ff2d78?style=for-the-badge)
-![Plotly](https://img.shields.io/badge/Charts-Plotly.js-00e5ff?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-ffe600?style=for-the-badge)
-
-
-## 📌 About
-
-**Critics vs. Consumers** is an interactive information visualization dashboard exploring 40+ years of video game sales data (1985–2016). It investigates the tension between **critical acclaim** and **commercial success** across genres, publishers, platforms, and global regions.
-
-Built for **Mini-Project 2** of an Information Visualization course, applying:
-- Gestalt principles (proximity, enclosure, similarity)
-- Cleveland & McGill visual encoding hierarchy
-- Expressiveness & Effectiveness principles
+[![GitHub](https://img.shields.io/badge/GitHub-7dracoder-181717?style=flat&logo=github)](https://github.com/7dracoder)
+[![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
+[![Plotly.js](https://img.shields.io/badge/Plotly.js-3F4F75?style=flat&logo=plotly&logoColor=white)](https://plotly.com/javascript/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
-## 🔬 Research Questions
+## 📖 Overview
 
-1. How has genre popularity evolved over time in terms of global sales?
-2. Is there a measurable correlation between critic scores and commercial success?
-3. How do regional markets (NA, EU, Japan) differ in genre preferences?
-4. Which publishers consistently achieve high critic scores across multiple genres?
+**Critics vs. Consumers** is a fully interactive, single-file HTML dashboard built for **Mini-Project 2** of an Information Visualization course. It answers three core research questions:
 
----
+1. **Do critic scores predict commercial success?** — Or do consumers decide independently?
+2. **How have genre preferences shifted over time?** — From the 80s platform era to the 2000s shooter boom
+3. **Do regional markets favour different genres?** — NA vs. Europe vs. Japan buying patterns
+4. **Which publishers consistently produce quality games?** — By genre specialization
 
-## 📊 Dashboard Views
-
-| View | Chart Type | What It Shows |
-|------|-----------|---------------|
-| **① Genre Dominance Over Time** | Stacked Area | Genre sales trends 1985–2016 |
-| **② The Critical Disconnect** | Scatter Plot | Critic score vs. global sales per game |
-| **③ A World Divided** | Grouped Bar | NA / EU / Japan sales split by genre |
-| **④ Publisher × Genre Matrix** | Heatmap | Avg critic score per publisher per genre |
+No backend. No build step. Just open an HTML file in your browser.
 
 ---
 
-## 🕹️ Interactions
+## ✨ Features
 
-| Control | What It Does |
-|---------|-------------|
-| **Genre dropdown** | Cross-filters all 4 views |
-| **Publisher dropdown** | Cross-filters all 4 views |
-| **Platform dropdown** | Cross-filters all 4 views |
-| **Year Min / Max sliders** | Narrows the time window across all views |
-| **Click genre band (View 1)** | Highlights that genre across all views |
-| **↺ Reset button** | Clears all filters instantly |
-| **Hover any chart** | Shows detailed tooltip for that data point |
+- **4 Coordinated Interactive Views** — all charts update together when you apply filters or click
+- **Cross-filtering** — click any data point in any view to filter all others simultaneously
+- **Dual-handle year range slider** — drag both handles, supports single-year selection
+- **Live KPI bar** — total games, global sales, avg critic score, top genre & publisher update in real time
+- **Colorblind-safe palette** — Okabe-Ito perceptually uniform colors across all charts
+- **Dot size encoding** — scatter plot dot size represents critic review count (not just score)
+- **Insight annotations** — contextual takeaways beneath each chart
+- **Fully responsive** — works on any screen size
+- **Zero dependencies** — only Plotly.js (CDN), no npm, no framework
+
+---
+
+## 📊 The Four Views
+
+| # | View | Chart Type | What It Shows |
+|---|------|-----------|---------------|
+| 1 | **Genre Dominance Over Time** | Stacked Area | How genre popularity shifted 1985–2016 |
+| 2 | **The Critical Disconnect** | Scatter Plot | Critic score vs. global sales (dot = review count) |
+| 3 | **A World Divided** | Grouped Bar | Regional sales (NA / EU / Japan) per genre |
+| 4 | **Publisher × Genre Matrix** | Heatmap | Avg critic score by publisher and genre |
+
+---
+
+## 🎨 Themes
+
+Five complete visual themes are included — same data, same functionality, different aesthetic:
+
+| File | Theme | Vibe |
+|------|-------|------|
+| `index.html` | **Default / Retro Arcade** | Neon on dark, Press Start 2P font |
+| `index_blueprint.html` | **Blueprint** | Engineering technical drawing, navy + gold |
+| `index_cod.html` | **Call of Duty** | Military tactical, olive + orange, Bebas Neue |
+| `index_mario.html` | **Super Mario** | Blue sky, brick strips, pixel coins, NES HUD |
+| `index_valorant.html` | **Valorant** | Glassmorphism, purple/pink/cyan neon, Orbitron |
+
+---
+
+## 🚀 Getting Started
+
+### Option 1 — Just open it
+```bash
+# Clone the repo
+git clone https://github.com/7dracoder/critics-vs-consumers.git
+cd critics-vs-consumers
+
+# Open any theme in your browser
+open index_valorant.html      # macOS
+start index_valorant.html     # Windows
+xdg-open index_valorant.html  # Linux
+```
+
+### Option 2 — Serve locally (recommended to avoid CORS issues)
+```bash
+# Python 3
+python -m http.server 8080
+
+# Then open http://localhost:8080/index_valorant.html
+```
+
+> ⚠️ **No installation needed.** All dependencies are loaded via CDN (Plotly.js 2.27.0).
 
 ---
 
@@ -59,75 +93,89 @@ Built for **Mini-Project 2** of an Information Visualization course, applying:
 ```
 critics-vs-consumers/
 │
-├── index.html        ← Entire dashboard (self-contained, no build step)
-└──README.md         ← This file
+├── index.html              # Default retro arcade theme
+├── index_blueprint.html    # Blueprint engineering theme
+├── index_cod.html          # Call of Duty military theme
+├── index_mario.html        # Super Mario theme
+├── index_valorant.html     # Valorant theme
+│
+└── README.md
 ```
+
+> All logic, styles, and chart rendering are **self-contained** in each HTML file.
 
 ---
 
-## 🚀 Run Locally
+## 🖱️ How to Use
 
-No installation required. Just:
+| Interaction | What Happens |
+|---|---|
+| **Dropdown — Genre / Publisher / Platform** | Filters all 4 views simultaneously |
+| **Year range slider** | Drag left/right handles to set date range; drag both to same point for single year |
+| **Click a genre band** in View 1 | Cross-filters all other charts by that genre |
+| **Click a dot** in View 2 | Cross-filters by the dot's genre |
+| **Click a bar** in View 3 | Cross-filters by that genre |
+| **Click a cell** in View 4 | Cross-filters by that genre |
+| **"DISENGAGE / CLEAR" badge** | Clears the active cross-filter |
+| **↺ Reset button** | Resets all filters to default |
 
-```bash
-# Option 1 — Simply double-click index.html in your file explorer
+---
 
-# Option 2 — Serve with Python
-python -m http.server 8000
-# Then open http://localhost:8000
-```
+## 🛠️ Tech Stack
 
-## 📦 Replace Simulated Data with Real Data
+| Technology | Purpose |
+|---|---|
+| **HTML5 / CSS3** | Structure & all visual themes |
+| **Vanilla JavaScript** | Data generation, state management, event handling |
+| **[Plotly.js 2.27.0](https://plotly.com/javascript/)** | All 4 interactive charts (CDN) |
+| **Google Fonts** | Press Start 2P, Orbitron, Bebas Neue, Caveat, Share Tech Mono |
 
-This dashboard currently uses procedurally generated data. To use real data:
+---
 
-1. Download the dataset from Kaggle:
-   [Video Game Sales with Ratings](https://www.kaggle.com/datasets/rush4ratio/video-game-sales-with-ratings)
+## 📦 Data
 
-2. Convert `vgsales-12-4-2019.csv` to JSON:
-```python
-import pandas as pd, json
-df = pd.read_csv('vgsales-12-4-2019.csv').dropna()
-df.to_json('data.json', orient='records')
-```
+> ⚠️ The current version uses **2,000 simulated data points** generated with a seeded random function to approximate the real dataset's distribution.
 
-3. In `index.html`, replace the `// SIMULATED DATA` block with:
+To use the **real dataset**:
+1. Download from [Kaggle — Video Game Sales with Ratings](https://www.kaggle.com/datasets/rush4ratio/video-game-sales-with-ratings)
+2. Replace the `RAW` array generation block in the `<script>` tag with a CSV fetch:
+
 ```javascript
-const response = await fetch('data.json');
-const RAW = await response.json();
+fetch('vgsales_with_ratings.csv')
+  .then(r => r.text())
+  .then(csv => {
+    // parse and populate RAW[] here
+    redrawAll();
+  });
 ```
 
 ---
 
-## 🎨 Design Decisions
+## 🎓 Academic Context
 
-| Principle | Application |
-|-----------|------------|
-| **Proximity** | Filter controls grouped tightly; insight notes directly below each chart |
-| **Enclosure** | Each panel boxed with neon border; filter bar enclosed separately |
-| **Similarity** | All 4 panels share identical border/tag style |
-| **Visual Hierarchy** | Title → KPIs → Section Labels → Charts → Insight Notes |
-| **Effectiveness** | Position (most important) used for sales/score axes |
-| **Expressiveness** | Color hue for categorical genre; position for quantitative sales |
+- **Course:** Information Visualization
+- **Assignment:** Mini-Project 2 — Interactive Dashboard
+- **Research Questions Addressed:**
+  - RQ1: Correlation between critic scores and commercial sales
+  - RQ2: Genre popularity trends over time (1985–2016)
+  - RQ3: Regional market preferences by genre
+  - RQ4: Publisher quality consistency across genres
 
----
-
-## 🛠️ Built With
-
-- [Plotly.js](https://plotly.com/javascript/) — interactive charts
-- [Press Start 2P](https://fonts.google.com/specimen/Press+Start+2P) — pixel font
-- [Share Tech Mono](https://fonts.google.com/specimen/Share+Tech+Mono) — monospace body font
-- Pure HTML / CSS / JavaScript — zero dependencies, no build step
+### Gestalt Principles Applied
+- **Proximity** — related views grouped together; filter controls clustered; insight notes directly beneath their charts
+- **Enclosure** — each chart enclosed in its own bordered panel; filter group in its own container
+- **Similarity** — identical panel border style, same font hierarchy, same chart background across all 4 views
 
 ---
 
 ## 📄 License
 
-MIT — free to use, modify, and distribute.
+MIT License — feel free to fork, remix, and build on this.
 
 ---
 
 <div align="center">
-  <strong>INSERT COIN TO CONTINUE ▮</strong><br/>
-  Made with 🎮 for Information Visualization · 2026
+  Made with ☕ by <a href="https://github.com/7dracoder">7dracoder</a>
+  <br/>
+  <sub>Information Visualization · Mini-Project 2 · 2026</sub>
 </div>

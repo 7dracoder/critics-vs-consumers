@@ -2,200 +2,421 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Critics vs. Consumers 🎮</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Critics vs. Consumers — TACTICAL</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Share+Tech+Mono&family=Oswald:wght@400;600&display=swap" rel="stylesheet"/>
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <style>
-  :root{
-    --bg:#0a0a1a;--panel:#111128;--border:#00ff88;--accent1:#ff2d78;
-    --accent2:#00e5ff;--accent3:#ffe600;--accent4:#b967ff;
-    --text:#e0e0ff;--dim:#555577;--font:'Press Start 2P',monospace;
-    --mono:'Share Tech Mono',monospace;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;overflow-x:hidden;}
+:root {
+  --bg:      #0d0d0b;
+  --panel:   #111210;
+  --border:  #3a3a2e;
+  --olive:   #6b8c3e;
+  --bright:  #A8C040;
+  --orange:  #FF6A00;
+  --tan:     #f0eade;
+  --dim:     #4e4e3c;
+  --dimtext: #a8a48e;
+  --red:     #cc2200;
+  --gold:    #FFB800;
+  --font:    'Bebas Neue', sans-serif;
+  --title:   'Oswald', sans-serif;
+  --mono:    'Share Tech Mono', monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
 
-  /* scanline overlay */
-  body::before{content:'';position:fixed;inset:0;pointer-events:none;
-    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.18) 2px,rgba(0,0,0,.18) 4px);
-    z-index:1000;}
+body{
+  background-color: var(--bg);
+  /* subtle noise/grain texture via repeating gradient */
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,transparent 2px,
+      rgba(168,192,64,.025) 2px,rgba(168,192,64,.025) 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,transparent 40px,
+      rgba(255,255,255,.012) 40px,rgba(255,255,255,.012) 41px
+    );
+  color: #e8e2d2;
+  font-family: var(--mono);
+  min-height:100vh;
+  overflow-x:hidden;
+}
 
-  /* ── HEADER ── */
-  header{padding:24px 32px 16px;border-bottom:2px solid var(--border);
-    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
-  .logo{font-family:var(--font);font-size:clamp(10px,2vw,16px);color:var(--border);
-    text-shadow:0 0 12px var(--border),0 0 30px var(--border);}
-  .logo span{color:var(--accent1);text-shadow:0 0 12px var(--accent1);}
-  .lives{font-family:var(--font);font-size:10px;color:var(--accent3);letter-spacing:2px;}
+/* ── SCANLINE + VIGNETTE ── */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:999;
+  background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,.65) 100%);
+}
 
-  /* ── CONTROLS BAR ── */
-  .controls{display:flex;flex-wrap:wrap;gap:16px;padding:16px 32px;
-    background:rgba(0,255,136,.04);border-bottom:1px dashed var(--dim);}
-  .ctrl-group{display:flex;flex-direction:column;gap:6px;}
-  .ctrl-group label{font-family:var(--font);font-size:8px;color:var(--accent2);letter-spacing:1px;}
-  select,input[type=range]{background:#0d0d22;color:var(--text);border:1px solid var(--border);
-    padding:6px 10px;font-family:var(--mono);font-size:12px;cursor:pointer;outline:none;
-    border-radius:2px;}
-  select:focus,input:focus{border-color:var(--accent2);box-shadow:0 0 8px var(--accent2);}
-  .year-val{font-family:var(--font);font-size:8px;color:var(--accent3);margin-top:2px;}
-  #resetBtn{margin-top:auto;padding:8px 16px;background:transparent;color:var(--accent1);
-    border:2px solid var(--accent1);font-family:var(--font);font-size:8px;cursor:pointer;
-    letter-spacing:1px;transition:all .2s;}
-  #resetBtn:hover{background:var(--accent1);color:#000;box-shadow:0 0 16px var(--accent1);}
+/* ── TOP ALERT BAR ── */
+#alertbar{
+  background: var(--red);
+  padding:3px 32px;
+  font-family:var(--mono);font-size:11px;letter-spacing:2px;
+  color:#fff;text-align:center;
+  text-transform:uppercase;
+  border-bottom:2px solid #800;
+}
 
-  /* ── KPI BAR ── */
-  .kpi-bar{display:flex;flex-wrap:wrap;gap:12px;padding:16px 32px;}
-  .kpi{flex:1;min-width:130px;background:var(--panel);border:1px solid var(--dim);
-    border-top:3px solid var(--border);padding:12px 16px;position:relative;}
-  .kpi-label{font-family:var(--font);font-size:7px;color:var(--dim);margin-bottom:8px;letter-spacing:1px;}
-  .kpi-val{font-family:var(--font);font-size:14px;color:var(--border);
-    text-shadow:0 0 10px var(--border);}
-  .kpi:nth-child(2) .kpi-val{color:var(--accent1);text-shadow:0 0 10px var(--accent1);}
-  .kpi:nth-child(3) .kpi-val{color:var(--accent2);text-shadow:0 0 10px var(--accent2);}
-  .kpi:nth-child(4) .kpi-val{color:var(--accent3);text-shadow:0 0 10px var(--accent3);}
-  .kpi:nth-child(5) .kpi-val{color:var(--accent4);text-shadow:0 0 10px var(--accent4);}
+/* ── HEADER ── */
+header{
+  padding:16px 32px 14px;
+  border-bottom:2px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;
+  background:linear-gradient(180deg,#1a1a14 0%,#0d0d0b 100%);
+  position:relative;
+}
 
-  /* ── SECTION LABELS ── */
-  .section-label{padding:10px 32px;font-family:var(--font);font-size:9px;
-    color:var(--dim);border-bottom:1px dashed var(--dim);letter-spacing:2px;}
-  .section-label span{color:var(--accent3);}
+/* crosshair watermark */
+header::before{
+  content:'+';
+  position:absolute;right:280px;top:50%;transform:translateY(-50%);
+  font-size:48px;color:rgba(168,192,64,.06);
+  font-family:var(--font);pointer-events:none;letter-spacing:-4px;
+}
 
-  /* ── GRID ── */
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:20px 32px;}
-  @media(max-width:900px){.grid{grid-template-columns:1fr;}}
+.logo-wrap{display:flex;flex-direction:column;gap:3px;}
+.logo{
+  font-family:var(--font);
+  font-size:clamp(20px,3vw,36px);
+  color:#f5f0e0;
+  letter-spacing:5px;
+  text-transform:uppercase;
+  line-height:1;
+}
+.logo span{color:var(--orange);text-shadow:0 0 20px rgba(255,106,0,.5);}
+.logo-sub{
+  font-family:var(--mono);font-size:11px;
+  color:#a8a48e;letter-spacing:2px;text-transform:uppercase;
+}
 
-  /* ── PANEL ── */
-  .panel{background:var(--panel);border:1px solid var(--dim);position:relative;padding-bottom:8px;}
-  .panel::before{content:attr(data-tag);position:absolute;top:-1px;left:16px;
-    background:var(--panel);font-family:var(--font);font-size:8px;padding:2px 8px;
-    border:1px solid currentColor;transform:translateY(-50%);}
-  .panel[data-tag="▶ VIEW 1"]::before{color:var(--border);}
-  .panel[data-tag="▶ VIEW 2"]::before{color:var(--accent1);}
-  .panel[data-tag="▶ VIEW 3"]::before{color:var(--accent2);}
-  .panel[data-tag="▶ VIEW 4"]::before{color:var(--accent4);}
-  .panel-title{font-family:var(--font);font-size:8px;padding:20px 16px 4px;letter-spacing:1px;}
-  .panel[data-tag="▶ VIEW 1"] .panel-title{color:var(--border);}
-  .panel[data-tag="▶ VIEW 2"] .panel-title{color:var(--accent1);}
-  .panel[data-tag="▶ VIEW 3"] .panel-title{color:var(--accent2);}
-  .panel[data-tag="▶ VIEW 4"] .panel-title{color:var(--accent4);}
-  .insight{font-size:11px;color:var(--dim);padding:6px 16px 8px;border-top:1px dashed var(--dim);margin-top:4px;}
+/* rank badge */
+.rank{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  border:2px solid var(--border);padding:8px 16px;
+  background:rgba(0,0,0,.4);
+}
+.rank-icon{font-size:22px;line-height:1;}
+.rank-label{font-family:var(--mono);font-size:10px;color:#a8a48e;letter-spacing:1px;}
 
-  /* ── FOOTER ── */
-  footer{text-align:center;padding:24px;font-family:var(--font);font-size:8px;
-    color:var(--dim);border-top:1px solid var(--dim);letter-spacing:2px;}
-  footer span{color:var(--accent3);animation:blink 1s step-end infinite;}
-  @keyframes blink{50%{opacity:0;}}
+/* ── CONTROLS ── */
+.controls{
+  display:flex;flex-wrap:wrap;gap:16px;padding:14px 32px;
+  border-bottom:1px solid var(--border);
+  background:rgba(0,0,0,.3);
+  align-items:flex-end;
+}
+.ctrl-group{display:flex;flex-direction:column;gap:5px;}
+.ctrl-group label{
+  font-family:var(--mono);font-size:12px;
+  color:var(--bright);letter-spacing:1px;text-transform:uppercase;
+}
+select{
+  background:#0a0a08;color:var(--tan);
+  border:1px solid var(--border);border-left:3px solid var(--olive);
+  padding:7px 12px;font-family:var(--mono);font-size:14px;
+  cursor:pointer;outline:none;transition:border-color .15s;
+}
+select:focus{border-color:var(--bright);border-left-color:var(--orange);}
+.year-val{font-family:var(--mono);font-size:13px;color:var(--gold);letter-spacing:1px;}
+#resetBtn{
+  padding:8px 20px;background:transparent;
+  color:var(--orange);border:1px solid var(--orange);border-left:3px solid var(--orange);
+  font-family:var(--font);font-size:16px;cursor:pointer;
+  letter-spacing:3px;transition:all .15s;
+}
+#resetBtn:hover{background:var(--orange);color:#000;}
 
-  /* pixel corners */
-  .panel::after{content:'';position:absolute;bottom:0;right:0;
-    width:8px;height:8px;border-right:2px solid var(--border);border-bottom:2px solid var(--border);}
+/* DUAL RANGE */
+.range-wrap{position:relative;width:200px;height:28px;margin-top:4px;}
+.range-wrap input[type=range]{
+  position:absolute;width:100%;top:50%;transform:translateY(-50%);
+  -webkit-appearance:none;appearance:none;
+  background:transparent;pointer-events:none;height:20px;margin:0;
+}
+.range-wrap input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:4px;height:18px;border-radius:0;
+  background:var(--orange);border:none;
+  box-shadow:0 0 8px rgba(255,106,0,.8);
+  pointer-events:all;cursor:ew-resize;
+}
+.range-wrap input[type=range]::-moz-range-thumb{
+  width:4px;height:18px;border-radius:0;
+  background:var(--orange);border:none;
+  pointer-events:all;cursor:ew-resize;
+}
+.range-track{
+  position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+  height:3px;background:var(--dim);pointer-events:none;
+}
+.range-fill{
+  position:absolute;height:100%;
+  background:var(--orange);box-shadow:0 0 4px rgba(255,106,0,.6);
+}
+
+/* ── BRUSH BADGE ── */
+#brushBadge{
+  display:none;padding:5px 32px;
+  background:rgba(255,106,0,.08);border-bottom:1px solid var(--orange);
+  font-family:var(--mono);font-size:12px;color:var(--orange);letter-spacing:1px;
+}
+#brushBadge span{color:var(--bright);}
+#clearBrush{
+  background:transparent;border:1px solid var(--orange);
+  color:var(--orange);font-family:var(--mono);font-size:8px;
+  padding:2px 8px;cursor:pointer;margin-left:10px;
+}
+#clearBrush:hover{background:var(--orange);color:#000;}
+
+/* ── KPI BAR ── */
+.kpi-bar{
+  display:flex;flex-wrap:wrap;gap:1px;
+  padding:0 32px;
+  border-bottom:2px solid var(--border);
+  background:var(--border);  /* gap color */
+}
+.kpi{
+  flex:1;min-width:130px;
+  background:var(--panel);
+  padding:12px 16px;position:relative;
+  border-top:3px solid var(--olive);
+}
+.kpi:first-child{border-top-color:var(--bright);}
+.kpi:nth-child(2){border-top-color:var(--orange);}
+.kpi:nth-child(3){border-top-color:var(--gold);}
+/* KILLSTREAK label */
+.kpi-label{
+  font-family:var(--mono);font-size:11px;
+  color:#c0bca6;margin-bottom:6px;
+  letter-spacing:1px;text-transform:uppercase;
+}
+.kpi-val{
+  font-family:var(--font);font-size:24px;
+  color:var(--tan);letter-spacing:2px;
+}
+.kpi:first-child .kpi-val{color:var(--bright);}
+.kpi:nth-child(2) .kpi-val{color:var(--orange);}
+.kpi:nth-child(3) .kpi-val{color:var(--gold);}
+/* ammo tick marks */
+.kpi::after{
+  content:'| | | | |';
+  position:absolute;bottom:5px;right:10px;
+  font-size:7px;color:var(--dim);letter-spacing:1px;
+  font-family:var(--mono);
+}
+
+/* ── SECTION LABELS ── */
+.section-label{
+  padding:10px 32px;
+  font-family:var(--font);font-size:18px;
+  color:#c0bca6;letter-spacing:4px;text-transform:uppercase;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;
+  background:rgba(0,0,0,.2);
+}
+.section-label .num{
+  font-family:var(--mono);font-size:11px;color:var(--bright);
+  border:1px solid var(--olive);padding:3px 10px;letter-spacing:2px;
+}
+.section-label::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(to right,var(--border),transparent);
+}
+
+/* ── GRID ── */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:16px 32px;gap:16px;}
+@media(max-width:900px){.grid{grid-template-columns:1fr;}}
+
+/* ── PANEL ── */
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-top:2px solid var(--olive);
+  position:relative;padding-bottom:8px;
+  transition:border-color .15s;
+}
+.panel:hover{border-color:var(--bright);}
+.panel.brushed{border-color:var(--orange);border-top-color:var(--orange);
+  box-shadow:0 0 12px rgba(255,106,0,.2);}
+
+/* tactical corner marks */
+.panel::before{
+  content:attr(data-tag);
+  position:absolute;top:0;right:12px;
+  font-family:var(--mono);font-size:10px;
+  color:#b8b4a0;letter-spacing:2px;
+  background:var(--panel);padding:1px 8px;
+  transform:translateY(-50%);border:1px solid var(--border);
+}
+
+.panel-title{
+  font-family:var(--title);font-weight:600;
+  font-size:15px;padding:14px 16px 4px;
+  letter-spacing:2px;text-transform:uppercase;color:var(--tan);
+}
+.panel[data-tag="VIEW 1"] .panel-title{color:var(--bright);}
+.panel[data-tag="VIEW 2"] .panel-title{color:var(--gold);}
+.panel[data-tag="VIEW 3"] .panel-title{color:#c8e87a;}
+.panel[data-tag="VIEW 4"] .panel-title{color:#C8A97E;}
+
+.insight{
+  font-size:13px;color:#b0ac96;
+  padding:7px 16px 9px;
+  border-top:1px solid var(--border);margin-top:2px;
+  font-style:italic;
+}
+.insight b{color:var(--orange);font-style:normal;}
+
+/* ── FOOTER ── */
+footer{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:8px;
+  padding:12px 32px;
+  border-top:2px solid var(--border);
+  background:rgba(0,0,0,.4);
+  font-family:var(--mono);font-size:8px;
+  color:var(--dimtext);letter-spacing:2px;text-transform:uppercase;
+}
+footer span{color:var(--orange);animation:blink 2s step-end infinite;}
+@keyframes blink{50%{opacity:0;}}
 </style>
 </head>
 <body>
 
+<div id="alertbar">&#9632; MISSION BRIEFING &nbsp;|&nbsp; INTEL ACTIVE &nbsp;|&nbsp; CLASSIFIED: INFORMATION VISUALIZATION &nbsp;|&nbsp; &#9632;</div>
+
 <!-- HEADER -->
 <header>
-  <div class="logo">CRITICS <span>VS.</span> CONSUMERS<br><small style="font-size:8px;color:var(--dim);">VIDEO GAME MARKET INTELLIGENCE</small></div>
-  <div class="lives">♥ ♥ ♥ &nbsp; HIGH SCORE: 99,999</div>
+  <div class="logo-wrap">
+    <div class="logo">CRITICS <span>VS.</span> CONSUMERS</div>
+    <div class="logo-sub">&#9632; Video Game Market Intelligence &nbsp;|&nbsp; 1985–2016 &nbsp;|&nbsp; 2,000 Titles Analyzed</div>
+  </div>
+  <div class="rank">
+    <div class="rank-icon">&#127922;</div>
+    <div class="rank-label">PRESTIGE MODE</div>
+  </div>
 </header>
 
 <!-- CONTROLS -->
 <div class="controls">
   <div class="ctrl-group">
-    <label>⬛ GENRE</label>
+    <label>&#9654; Genre</label>
     <select id="genreFilter"><option value="ALL">ALL GENRES</option></select>
   </div>
   <div class="ctrl-group">
-    <label>⬛ PUBLISHER</label>
+    <label>&#9654; Publisher</label>
     <select id="pubFilter"><option value="ALL">ALL PUBLISHERS</option></select>
   </div>
   <div class="ctrl-group">
-    <label>⬛ PLATFORM</label>
+    <label>&#9654; Platform</label>
     <select id="platFilter"><option value="ALL">ALL PLATFORMS</option></select>
   </div>
   <div class="ctrl-group">
-    <label>⬛ YEAR RANGE &nbsp; <span class="year-val" id="yearVal">1985 → 2016</span></label>
-    <input type="range" id="yearMin" min="1985" max="2016" value="1985" style="width:160px"/>
-    <input type="range" id="yearMax" min="1985" max="2016" value="2016" style="width:160px"/>
+    <label>&#9654; Year Range &nbsp;<span class="year-val" id="yearVal">1985 &#8594; 2016</span></label>
+    <div class="range-wrap">
+      <input type="range" id="yearMin" min="1985" max="2016" value="1985"/>
+      <input type="range" id="yearMax" min="1985" max="2016" value="2016"/>
+      <div class="range-track"><div class="range-fill" id="rangeFill"></div></div>
+    </div>
   </div>
-  <div class="ctrl-group" style="justify-content:flex-end;">
-    <button id="resetBtn">↺ RESET</button>
+  <div class="ctrl-group">
+    <button id="resetBtn">&#10554; RESET</button>
   </div>
+</div>
+
+<!-- BRUSH BADGE -->
+<div id="brushBadge">
+  &#9654; CROSS-FILTER LOCKED — GENRE: <span id="brushGenreLabel">—</span>
+  <button id="clearBrush">&#10005; DISENGAGE</button>
 </div>
 
 <!-- KPI -->
 <div class="kpi-bar">
-  <div class="kpi"><div class="kpi-label">TOTAL GAMES</div><div class="kpi-val" id="kpiGames">—</div></div>
-  <div class="kpi"><div class="kpi-label">GLOBAL SALES (M)</div><div class="kpi-val" id="kpiSales">—</div></div>
-  <div class="kpi"><div class="kpi-label">AVG CRITIC SCORE</div><div class="kpi-val" id="kpiScore">—</div></div>
-  <div class="kpi"><div class="kpi-label">TOP GENRE</div><div class="kpi-val" id="kpiGenre" style="font-size:9px">—</div></div>
-  <div class="kpi"><div class="kpi-label">TOP PUBLISHER</div><div class="kpi-val" id="kpiPub" style="font-size:9px">—</div></div>
+  <div class="kpi"><div class="kpi-label">&#9632; Titles on Record</div><div class="kpi-val" id="kpiGames">—</div></div>
+  <div class="kpi"><div class="kpi-label">&#9632; Global Sales (M)</div><div class="kpi-val" id="kpiSales">—</div></div>
+  <div class="kpi"><div class="kpi-label">&#9632; Avg Critic Score</div><div class="kpi-val" id="kpiScore">—</div></div>
+  <div class="kpi"><div class="kpi-label">&#9632; Top Genre</div><div class="kpi-val" id="kpiGenre" style="font-size:14px">—</div></div>
+  <div class="kpi"><div class="kpi-label">&#9632; Top Publisher</div><div class="kpi-val" id="kpiPub" style="font-size:14px">—</div></div>
 </div>
 
 <!-- SECTION A -->
-<div class="section-label"><span>①</span> MARKET OVERVIEW</div>
+<div class="section-label"><span class="num">OBJ 01</span>MARKET OVERVIEW</div>
 <div class="grid">
-  <div class="panel" data-tag="▶ VIEW 1">
-    <div class="panel-title">GENRE DOMINANCE OVER TIME</div>
-    <div id="chart1" style="height:320px;"></div>
-    <div class="insight">💡 Platform games ruled the 80s/90s. Action & Shooter surged post-2000.</div>
+  <div class="panel" data-tag="VIEW 1">
+    <div class="panel-title">Genre Dominance Over Time</div>
+    <div id="chart1" style="height:320px"></div>
+    <div class="insight">&#9670; Platform games ruled the 80s/90s. Action &amp; Shooter surged post-2000.</div>
   </div>
-  <div class="panel" data-tag="▶ VIEW 2">
-    <div class="panel-title">THE CRITICAL DISCONNECT</div>
-    <div id="chart2" style="height:320px;"></div>
-    <div class="insight">💡 High critic scores weakly predict sales — outliers dominate every quadrant.</div>
+  <div class="panel" data-tag="VIEW 2">
+    <div class="panel-title">The Critical Disconnect</div>
+    <div id="chart2" style="height:320px"></div>
+    <div class="insight">&#9670; High critic scores weakly predict sales. <b>Dot size = review count.</b> Click to engage cross-filter.</div>
   </div>
 </div>
 
 <!-- SECTION B -->
-<div class="section-label"><span>②</span> REGIONAL & PUBLISHER BREAKDOWN</div>
+<div class="section-label"><span class="num">OBJ 02</span>REGIONAL &amp; PUBLISHER BREAKDOWN</div>
 <div class="grid">
-  <div class="panel" data-tag="▶ VIEW 3">
-    <div class="panel-title">A WORLD DIVIDED — REGIONAL SALES BY GENRE</div>
-    <div id="chart3" style="height:320px;"></div>
-    <div class="insight">💡 Japan favours RPGs disproportionately vs. NA/EU markets.</div>
+  <div class="panel" data-tag="VIEW 3">
+    <div class="panel-title">A World Divided — Regional Sales by Genre</div>
+    <div id="chart3" style="height:320px"></div>
+    <div class="insight">&#9670; Japan favours RPGs disproportionately vs. NA/EU markets.</div>
   </div>
-  <div class="panel" data-tag="▶ VIEW 4">
-    <div class="panel-title">PUBLISHER × GENRE CRITIC SCORE MATRIX</div>
-    <div id="chart4" style="height:320px;"></div>
-    <div class="insight">💡 Some publishers are genre specialists; others maintain uniform quality.</div>
+  <div class="panel" data-tag="VIEW 4">
+    <div class="panel-title">Publisher &times; Genre Critic Score Matrix</div>
+    <div id="chart4" style="height:360px"></div>
+    <div class="insight">&#9670; Some publishers are genre specialists; others maintain uniform quality across all genres.</div>
   </div>
 </div>
 
-<footer>INSERT COIN TO CONTINUE &nbsp;|&nbsp; DATA: VGChartz + Metacritic &nbsp;|&nbsp; <span>▮</span> CRITICS VS CONSUMERS 2026</footer>
+<footer>
+  <span>&#9632; CRITICS VS CONSUMERS 2026</span>
+  <span style="animation:none">Information Visualization &middot; Mini-Project 2</span>
+  <span style="animation:none;color:var(--dimtext)">DATA: VGChartz + Metacritic</span>
+</footer>
 
 <script>
-// ── SIMULATED DATA ──────────────────────────────────────────────────────────
-const GENRES = ['Action','Shooter','Sports','RPG','Platform','Racing','Fighting','Simulation','Strategy','Misc'];
+
+// ═══════════════════════════════════════════════
+// OKABE-ITO COLORBLIND-SAFE PALETTE
+// ═══════════════════════════════════════════════
+const OKABE = [
+  '#E69F00','#56B4E9','#009E73','#F0E442',
+  '#0072B2','#D55E00','#CC79A7','#999999',
+  '#44AA99','#882255'
+];
+
+const GENRES   = ['Action','Shooter','Sports','RPG','Platform','Racing','Fighting','Simulation','Strategy','Misc'];
 const PUBLISHERS = ['Nintendo','EA','Activision','Ubisoft','Sony','Sega','Capcom','Konami','Namco','THQ'];
-const PLATFORMS = ['PS2','PS3','PS4','Wii','X360','XOne','DS','3DS','PC','GBA'];
+const PLATFORMS  = ['PS2','PS3','PS4','Wii','X360','XOne','DS','3DS','PC','GBA'];
 
 function rand(min,max){return Math.random()*(max-min)+min;}
 function randInt(min,max){return Math.floor(rand(min,max+1));}
 function pick(arr){return arr[randInt(0,arr.length-1)];}
 
-// Generate ~2000 simulated games
+// Generate 2000 simulated games
 const RAW=[];
 for(let i=0;i<2000;i++){
-  const yr=randInt(1985,2016);
-  const genre=pick(GENRES);
-  const pub=pick(PUBLISHERS);
-  const plat=pick(PLATFORMS);
-  // Genre + publisher influence score & sales
-  const genreBonus={'Action':2,'Shooter':3,'Sports':4,'RPG':1,'Platform':5}[genre]||0;
-  const pubBonus={'Nintendo':8,'EA':4,'Activision':5,'Sony':3}[pub]||1;
+  const yr=randInt(1985,2016), genre=pick(GENRES), pub=pick(PUBLISHERS), plat=pick(PLATFORMS);
+  const genreBonus={Action:2,Shooter:3,Sports:4,RPG:1,Platform:5}[genre]||0;
+  const pubBonus={Nintendo:8,EA:4,Activision:5,Sony:3}[pub]||1;
   const baseScore=55+genreBonus*2+pubBonus+rand(-10,10);
   const cs=Math.min(99,Math.max(20,baseScore));
+  const cc=randInt(5,80); // critic count — used for dot size
   const na=Math.max(0,rand(0,5)*(pub==='Nintendo'?2:1)*(genre==='Shooter'?1.5:1));
   const eu=Math.max(0,rand(0,3));
   const jp=Math.max(0,rand(0,2)*(genre==='RPG'?3:0.5));
   const gs=na+eu+jp+rand(0,0.5);
-  RAW.push({yr,genre,pub,plat,cs,na,eu,jp,gs});
+  RAW.push({yr,genre,pub,plat,cs,cc,na,eu,jp,gs});
 }
 
-// ── POPULATE FILTERS ────────────────────────────────────────────────────────
+// Populate filters
 function populateSelect(id,arr){
   const sel=document.getElementById(id);
   arr.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.appendChild(o);});
@@ -204,31 +425,51 @@ populateSelect('genreFilter',GENRES);
 populateSelect('pubFilter',PUBLISHERS);
 populateSelect('platFilter',PLATFORMS);
 
-// ── FILTER STATE ────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
 let state={genre:'ALL',pub:'ALL',plat:'ALL',yMin:1985,yMax:2016};
-let selectedGenre=null; // for View1 click cross-filter
+let selectedGenre=null;
 
 function getFiltered(){
   return RAW.filter(d=>{
-    if(state.genre!=='ALL'&&d.genre!==state.genre)return false;
-    if(state.pub!=='ALL'&&d.pub!==state.pub)return false;
-    if(state.plat!=='ALL'&&d.plat!==state.plat)return false;
-    if(d.yr<state.yMin||d.yr>state.yMax)return false;
-    if(selectedGenre&&d.genre!==selectedGenre)return false;
+    if(state.genre!=='ALL'&&d.genre!==state.genre) return false;
+    if(state.pub!=='ALL'&&d.pub!==state.pub) return false;
+    if(state.plat!=='ALL'&&d.plat!==state.plat) return false;
+    if(d.yr<state.yMin||d.yr>state.yMax) return false;
+    if(selectedGenre&&d.genre!==selectedGenre) return false;
     return true;
   });
 }
 
-// ── PLOTLY THEME ─────────────────────────────────────────────────────────────
+function setBrush(g){
+  selectedGenre=g;
+  const badge=document.getElementById('brushBadge');
+  if(g){
+    badge.style.display='block';
+    document.getElementById('brushGenreLabel').textContent=g;
+    // glow all panels
+    document.querySelectorAll('.panel').forEach(p=>p.classList.add('brushed'));
+  } else {
+    badge.style.display='none';
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('brushed'));
+  }
+  redrawAll();
+}
+
+// ═══════════════════════════════════════════════
+// PLOTLY THEME
+// ═══════════════════════════════════════════════
 const BG='#111128', PAPER='#111128', GRID='#1e1e3a', FONT='#e0e0ff';
-const NEON=['#00ff88','#ff2d78','#00e5ff','#ffe600','#b967ff','#ff8c00','#39ff14','#ff4500','#00bfff','#ff69b4'];
+
 const plotCfg={displayModeBar:false,responsive:true};
+
 function baseLayout(title){
-  return{
+  return {
     paper_bgcolor:PAPER, plot_bgcolor:BG,
     font:{family:'Share Tech Mono',color:FONT,size:11},
-    title:{text:title,font:{family:'Press Start 2P',size:9,color:FONT},x:0.5,pad:{t:8}},
-    margin:{l:50,r:20,t:48,b:50},
+    title:{text:title,font:{family:'Press Start 2P',size:9,color:FONT},x:.5,pad:{t:8}},
+    margin:{l:52,r:20,t:48,b:52},
     xaxis:{gridcolor:GRID,zerolinecolor:GRID},
     yaxis:{gridcolor:GRID,zerolinecolor:GRID},
     legend:{bgcolor:'rgba(0,0,0,0)',font:{size:10}},
@@ -236,82 +477,176 @@ function baseLayout(title){
   };
 }
 
-// ── VIEW 1: Stacked Area ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+// VIEW 1 — Stacked Area (Genre Over Time)
+// Cross-filter: click a genre band
+// ═══════════════════════════════════════════════
 function drawV1(data){
   const years=[...new Set(data.map(d=>d.yr))].sort();
   const traces=GENRES.map((g,i)=>{
     const ys=years.map(y=>data.filter(d=>d.yr===y&&d.genre===g).reduce((a,d)=>a+d.gs,0));
-    return{type:'scatter',mode:'lines',name:g,x:years,y:ys,stackgroup:'one',
-      fillcolor:NEON[i]+'55',line:{color:NEON[i],width:1.5}};
+    const dim=selectedGenre&&selectedGenre!==g;
+    return {
+      type:'scatter',mode:'lines',name:g,x:years,y:ys,stackgroup:'one',
+      fillcolor:OKABE[i]+(dim?'33':'99'),
+      line:{color:OKABE[i],width:dim?0.5:1.5},
+      opacity:dim?0.3:1
+    };
   });
   const layout={...baseLayout(''),hovermode:'x unified'};
   layout.xaxis.title='Year'; layout.yaxis.title='Sales (M)';
   Plotly.react('chart1',traces,layout,plotCfg);
   document.getElementById('chart1').on('plotly_click',d=>{
     const g=d.points[0].data.name;
-    selectedGenre=(selectedGenre===g)?null:g;
-    redrawAll();
+    setBrush(selectedGenre===g?null:g);
   });
 }
 
-// ── VIEW 2: Scatter ───────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+// VIEW 2 — Scatter (Critic Score vs Sales)
+// FIX: dot size = critic_count | click = cross-filter
+// ═══════════════════════════════════════════════
 function drawV2(data){
   const byGenre={};
   GENRES.forEach(g=>{byGenre[g]=data.filter(d=>d.genre===g);});
-  const traces=GENRES.map((g,i)=>({
-    type:'scatter',mode:'markers',name:g,
-    x:byGenre[g].map(d=>d.cs), y:byGenre[g].map(d=>d.gs),
-    text:byGenre[g].map(d=>`${g} | ${d.yr} | Score:${d.cs.toFixed(0)}`),
-    hovertemplate:'%{text}<br>Sales: %{y:.2f}M<extra></extra>',
-    marker:{color:NEON[i],size:5,opacity:0.7,line:{width:0}}
-  }));
-  // trend line
-  const xs=data.map(d=>d.cs), ys=data.map(d=>d.gs);
-  const n=xs.length, sx=xs.reduce((a,v)=>a+v,0), sy=ys.reduce((a,v)=>a+v,0);
+  const traces=GENRES.map((g,i)=>{
+    const pts=byGenre[g];
+    const dim=selectedGenre&&selectedGenre!==g;
+    return {
+      type:'scatter',mode:'markers',name:g,
+      x:pts.map(d=>d.cs),
+      y:pts.map(d=>d.gs),
+      text:pts.map(d=>`${g} (${d.yr})`),
+      customdata:pts.map(d=>d.genre),
+      hovertemplate:'%{text}<br>Score: %{x:.0f}<br>Sales: %{y:.2f}M<br>Reviews: %{marker.size:.0f}<extra></extra>',
+      marker:{
+        color:OKABE[i],
+        // FIX: size encodes critic review count
+        size:pts.map(d=>Math.max(5,Math.sqrt(d.cc)*1.8)),
+        opacity:dim?0.15:0.75,
+        line:{width:0}
+      }
+    };
+  });
+  // Trend line
+  const xs=data.map(d=>d.cs), ys=data.map(d=>d.gs), n=xs.length;
+  const sx=xs.reduce((a,v)=>a+v,0), sy=ys.reduce((a,v)=>a+v,0);
   const sxy=xs.reduce((a,v,i)=>a+v*ys[i],0), sxx=xs.reduce((a,v)=>a+v*v,0);
   const m=(n*sxy-sx*sy)/(n*sxx-sx*sx), b=(sy-m*sx)/n;
-  const xr=[20,99]; const yr=xr.map(x=>m*x+b);
-  traces.push({type:'scatter',mode:'lines',name:'Trend',x:xr,y:yr,
-    line:{color:'#ffffff',width:2,dash:'dash'},showlegend:false});
+  traces.push({
+    type:'scatter',mode:'lines',name:'Trend',
+    x:[20,99],y:[m*20+b,m*99+b],
+    line:{color:'rgba(255,255,255,0.4)',width:2,dash:'dash'},
+    showlegend:false,hoverinfo:'skip'
+  });
   const layout={...baseLayout('')};
   layout.xaxis.title='Critic Score'; layout.yaxis.title='Global Sales (M)';
+  // Size legend annotation
+  layout.annotations=[{
+    x:0.98,y:0.98,xref:'paper',yref:'paper',xanchor:'right',yanchor:'top',
+    text:'● size = critic review count',showarrow:false,
+    font:{size:9,color:'#888',family:'Share Tech Mono'}
+  }];
   Plotly.react('chart2',traces,layout,plotCfg);
+  // FIX: click cross-filters by genre
+  document.getElementById('chart2').on('plotly_click',d=>{
+    const g=d.points[0].customdata;
+    setBrush(selectedGenre===g?null:g);
+  });
 }
 
-// ── VIEW 3: Grouped Bar ───────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+// VIEW 3 — Grouped Bar (Regional Sales)
+// FIX: click a bar = cross-filter by genre
+// ═══════════════════════════════════════════════
 function drawV3(data){
   const genres=[...new Set(data.map(d=>d.genre))];
   const na=genres.map(g=>data.filter(d=>d.genre===g).reduce((a,d)=>a+d.na,0));
   const eu=genres.map(g=>data.filter(d=>d.genre===g).reduce((a,d)=>a+d.eu,0));
   const jp=genres.map(g=>data.filter(d=>d.genre===g).reduce((a,d)=>a+d.jp,0));
+  const dim=(g)=>selectedGenre&&selectedGenre!==g;
+  const opac=(g)=>dim(g)?0.2:0.85;
   const traces=[
-    {type:'bar',name:'NA',x:genres,y:na,marker:{color:NEON[0]}},
-    {type:'bar',name:'EU',x:genres,y:eu,marker:{color:NEON[2]}},
-    {type:'bar',name:'JP',x:genres,y:jp,marker:{color:NEON[3]}}
+    {type:'bar',name:'N. America',x:genres,y:na,
+     marker:{color:OKABE[4],opacity:genres.map(g=>opac(g)),line:{color:GRID,width:1}},
+     customdata:genres,
+     hovertemplate:'N.America<br>%{x}: %{y:.1f}M<extra></extra>'},
+    {type:'bar',name:'Europe',x:genres,y:eu,
+     marker:{color:OKABE[2],opacity:genres.map(g=>opac(g)),line:{color:GRID,width:1}},
+     customdata:genres,
+     hovertemplate:'Europe<br>%{x}: %{y:.1f}M<extra></extra>'},
+    {type:'bar',name:'Japan',x:genres,y:jp,
+     marker:{color:OKABE[0],opacity:genres.map(g=>opac(g)),line:{color:GRID,width:1}},
+     customdata:genres,
+     hovertemplate:'Japan<br>%{x}: %{y:.1f}M<extra></extra>'},
   ];
-  const layout={...baseLayout(''),barmode:'group'};
-  layout.xaxis.title='Genre'; layout.yaxis.title='Sales (M)';
+  const layout={
+    ...baseLayout(''),
+    barmode:'group',
+    margin:{l:52,r:20,t:48,b:90},
+    xaxis:{gridcolor:GRID,zerolinecolor:GRID,
+      title:{text:'Genre',font:{color:FONT,size:11},standoff:18},
+      tickfont:{color:FONT,size:11},
+      tickangle:-35, automargin:true},
+    yaxis:{gridcolor:GRID,zerolinecolor:GRID,
+      title:{text:'Sales (M)',font:{color:FONT,size:11},standoff:8},
+      tickfont:{color:FONT,size:11}}
+  };
   Plotly.react('chart3',traces,layout,plotCfg);
+  // FIX: click cross-filters by genre
+  document.getElementById('chart3').on('plotly_click',d=>{
+    const g=d.points[0].x;
+    setBrush(selectedGenre===g?null:g);
+  });
 }
 
-// ── VIEW 4: Heatmap ───────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+// VIEW 4 — Heatmap (Publisher × Genre)
+// FIX: y-axis labels visible, no overlap, proper margins
+// ═══════════════════════════════════════════════
 function drawV4(data){
   const pubs=PUBLISHERS.slice(0,8), gens=GENRES;
   const z=pubs.map(p=>gens.map(g=>{
     const arr=data.filter(d=>d.pub===p&&d.genre===g);
     return arr.length?arr.reduce((a,d)=>a+d.cs,0)/arr.length:null;
   }));
-  const traces=[{type:'heatmap',x:gens,y:pubs,z,colorscale:[
-    [0,'#0a0a1a'],[0.25,'#1a1a4a'],[0.5,'#b967ff'],[0.75,'#00e5ff'],[1,'#00ff88']
-  ],zmin:40,zmax:90,hoverongaps:false,
-    hovertemplate:'Publisher: %{y}<br>Genre: %{x}<br>Avg Score: %{z:.1f}<extra></extra>'}];
-  const layout={...baseLayout('')};
-  layout.xaxis.title='Genre'; layout.yaxis.title='Publisher';
-  layout.margin.b=80;
+  const traces=[{
+    type:'heatmap',x:gens,y:pubs,z,
+    colorscale:[['0','#0a0a1a'],['0.25','#0072B2'],['0.5','#009E73'],['0.75','#E69F00'],['1','#F0E442']],
+    zmin:40,zmax:90,hoverongaps:false,
+    hovertemplate:'Publisher: %{y}<br>Genre: %{x}<br>Avg Score: %{z:.1f}<extra></extra>',
+    colorbar:{
+      title:{text:'Score',font:{color:FONT,size:9}},
+      tickfont:{color:FONT,size:9},thickness:12,len:0.85
+    }
+  }];
+  const layout={
+    ...baseLayout(''),
+    margin:{l:115,r:70,t:48,b:90},
+    xaxis:{gridcolor:GRID,zerolinecolor:GRID,
+      title:{text:'Genre',font:{color:FONT,size:11},standoff:18},
+      tickfont:{color:FONT,size:11},
+      tickangle:-35, automargin:true},
+    yaxis:{gridcolor:GRID,zerolinecolor:GRID,
+      title:'',                          // removed — publisher names on ticks are self-evident
+      tickfont:{color:FONT,size:11},
+      automargin:true,
+      tickmode:'array',
+      tickvals:pubs,
+      ticktext:pubs,
+      ticklabelposition:'outside',
+      ticklen:4}
+  };
   Plotly.react('chart4',traces,layout,plotCfg);
+  document.getElementById('chart4').on('plotly_click',d=>{
+    const g=d.points[0].x;
+    setBrush(selectedGenre===g?null:g);
+  });
 }
 
-// ── KPI UPDATE ────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+// KPI UPDATE
+// ═══════════════════════════════════════════════
 function updateKPIs(data){
   document.getElementById('kpiGames').textContent=data.length.toLocaleString();
   const totSales=data.reduce((a,d)=>a+d.gs,0);
@@ -319,40 +654,47 @@ function updateKPIs(data){
   const scoreArr=data.filter(d=>d.cs>0);
   const avgScore=scoreArr.length?scoreArr.reduce((a,d)=>a+d.cs,0)/scoreArr.length:0;
   document.getElementById('kpiScore').textContent=avgScore.toFixed(1);
-  // top genre by sales
-  const gMap={};
-  data.forEach(d=>{gMap[d.genre]=(gMap[d.genre]||0)+d.gs;});
+  const gMap={};data.forEach(d=>{gMap[d.genre]=(gMap[d.genre]||0)+d.gs;});
   const tg=Object.entries(gMap).sort((a,b)=>b[1]-a[1])[0];
   document.getElementById('kpiGenre').textContent=tg?tg[0]:'—';
-  const pMap={};
-  data.forEach(d=>{pMap[d.pub]=(pMap[d.pub]||0)+d.gs;});
+  const pMap={};data.forEach(d=>{pMap[d.pub]=(pMap[d.pub]||0)+d.gs;});
   const tp=Object.entries(pMap).sort((a,b)=>b[1]-a[1])[0];
   document.getElementById('kpiPub').textContent=tp?tp[0]:'—';
 }
 
-// ── REDRAW ALL ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+// REDRAW ALL
+// ═══════════════════════════════════════════════
 function redrawAll(){
   const data=getFiltered();
   updateKPIs(data);
-  drawV1(data);
-  drawV2(data);
-  drawV3(data);
-  drawV4(data);
+  drawV1(data); drawV2(data); drawV3(data); drawV4(data);
 }
 
-// ── EVENTS ────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════
+// EVENTS
+// ═══════════════════════════════════════════════
 document.getElementById('genreFilter').addEventListener('change',e=>{state.genre=e.target.value;redrawAll();});
 document.getElementById('pubFilter').addEventListener('change',e=>{state.pub=e.target.value;redrawAll();});
 document.getElementById('platFilter').addEventListener('change',e=>{state.plat=e.target.value;redrawAll();});
+function updateRangeFill(){
+  const min=1985,max=2016,range=max-min;
+  const leftPct=(state.yMin-min)/range*100;
+  const rightPct=(state.yMax-min)/range*100;
+  const fill=document.getElementById('rangeFill');
+  fill.style.left=leftPct+'%';
+  fill.style.width=(rightPct-leftPct)+'%';
+  document.getElementById('yearVal').textContent=`${state.yMin} \u2192 ${state.yMax}`;
+}
 document.getElementById('yearMin').addEventListener('input',e=>{
-  state.yMin=Math.min(+e.target.value,state.yMax);
-  document.getElementById('yearVal').textContent=`${state.yMin} → ${state.yMax}`;
-  redrawAll();
+  state.yMin=Math.min(parseInt(e.target.value),state.yMax);
+  e.target.value=state.yMin;
+  updateRangeFill(); redrawAll();
 });
 document.getElementById('yearMax').addEventListener('input',e=>{
-  state.yMax=Math.max(+e.target.value,state.yMin);
-  document.getElementById('yearVal').textContent=`${state.yMin} → ${state.yMax}`;
-  redrawAll();
+  state.yMax=Math.max(parseInt(e.target.value),state.yMin);
+  e.target.value=state.yMax;
+  updateRangeFill(); redrawAll();
 });
 document.getElementById('resetBtn').addEventListener('click',()=>{
   state={genre:'ALL',pub:'ALL',plat:'ALL',yMin:1985,yMax:2016};
@@ -362,12 +704,18 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
   document.getElementById('platFilter').value='ALL';
   document.getElementById('yearMin').value=1985;
   document.getElementById('yearMax').value=2016;
-  document.getElementById('yearVal').textContent='1985 → 2016';
+  state.yMin=1985; state.yMax=2016;
+  updateRangeFill();
+  document.getElementById('brushBadge').style.display='none';
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('brushed'));
   redrawAll();
 });
+document.getElementById('clearBrush').addEventListener('click',()=>setBrush(null));
 
-// initial draw
+// Initial render
+updateRangeFill();
 redrawAll();
+
 </script>
 </body>
 </html>
