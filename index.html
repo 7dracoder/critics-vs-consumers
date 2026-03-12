@@ -581,19 +581,52 @@ async function loadData() {
       'data.csv'
     ];
 
+    // fetch with 8-second per-request timeout using AbortController
+    async function fetchWithTimeout(url, ms=8000) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), ms);
+      try {
+        const r = await fetch(url, {signal: ctrl.signal});
+        clearTimeout(timer);
+        return r;
+      } catch(e) {
+        clearTimeout(timer);
+        throw e;
+      }
+    }
+
     let resp = null;
     let usedName = '';
     for(const name of filenames) {
       try {
-        const r = await fetch(name);
+        setProgress(15, `Trying ${name}...`);
+        const r = await fetchWithTimeout(name, 8000);
         if(r.ok){ resp = r; usedName = name; break; }
-      } catch(e){}
+        else { console.log(`${name} returned ${r.status}`); }
+      } catch(e){ console.log(`${name} failed:`, e.message); }
     }
 
-    if(!resp) throw new Error('No CSV file found');
+    if(!resp) throw new Error('CSV not found — check filename and GitHub Pages is enabled');
 
-    setProgress(30, `Found ${usedName} — reading...`);
-    const text = await resp.text();
+    setProgress(30, `Found ${usedName} — downloading...`);
+    // Stream read with progress for large files
+    const reader = resp.body.getReader();
+    const contentLength = resp.headers.get('Content-Length');
+    let received = 0;
+    const chunks = [];
+    while(true) {
+      const {done, value} = await reader.read();
+      if(done) break;
+      chunks.push(value);
+      received += value.length;
+      if(contentLength) {
+        const pct = 30 + Math.round((received/+contentLength)*30);
+        setProgress(pct, `Downloading... ${(received/1024).toFixed(0)} KB`);
+      }
+    }
+    const text = new TextDecoder().decode(
+      new Uint8Array(chunks.reduce((a,b)=>[...a,...b],[]))
+    );
     const totalRows = text.split('\n').length;
     setProgress(50, `Parsing ${totalRows.toLocaleString()} rows...`);
 
