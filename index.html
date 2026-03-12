@@ -518,6 +518,21 @@ function setProgress(pct, msg) {
   document.getElementById('loadStatus').textContent = msg;
 }
 
+// ── POPULATE A SINGLE SELECT DROPDOWN ──
+function populateSelect(id, arr) {
+  const sel = document.getElementById(id);
+  if(!sel) return;
+  const cur = sel.value;
+  // keep the ALL option, remove the rest
+  while(sel.options.length > 1) sel.remove(1);
+  arr.forEach(v => {
+    const o = document.createElement('option');
+    o.value = o.textContent = v;
+    sel.appendChild(o);
+  });
+  if([...sel.options].some(o=>o.value===cur)) sel.value=cur;
+}
+
 // ── POPULATE SELECTS (called after data loaded) ──
 function populateFilters() {
   const genres    = [...new Set(RAW.map(d=>d.genre))].filter(Boolean).sort();
@@ -547,44 +562,134 @@ function useFallback() {
 async function loadData() {
   setProgress(10, 'Looking for vgsales_with_ratings.csv...');
 
+  // Auto-fallback after 10 seconds
+  const timeout = setTimeout(() => {
+    if(RAW.length === 0) {
+      document.getElementById('loadStatus').textContent = '';
+      document.getElementById('loadFallback').style.display = 'block';
+      setProgress(0,'');
+    }
+  }, 10000);
+
   try {
-    const resp = await fetch('vgsales_with_ratings.csv');
-    if (!resp.ok) throw new Error('File not found');
+    // Try multiple possible filenames the user might have used
+    const filenames = [
+      'vgsales_with_ratings.csv',
+      'Video_Games_Sales_as_at_22_Dec_2016.csv',
+      'video_games.csv',
+      'vgsales.csv',
+      'data.csv'
+    ];
 
-    setProgress(30, 'File found — reading data...');
+    let resp = null;
+    let usedName = '';
+    for(const name of filenames) {
+      try {
+        const r = await fetch(name);
+        if(r.ok){ resp = r; usedName = name; break; }
+      } catch(e){}
+    }
+
+    if(!resp) throw new Error('No CSV file found');
+
+    setProgress(30, `Found ${usedName} — reading...`);
     const text = await resp.text();
+    const totalRows = text.split('\n').length;
+    setProgress(50, `Parsing ${totalRows.toLocaleString()} rows...`);
 
-    setProgress(60, 'Parsing CSV rows...');
-    // yield to browser so progress bar renders
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise(r => setTimeout(r, 30));
 
-    const { parsed, skipped } = parseCSV(text);
+    // ── FLEXIBLE COLUMN DETECTION ──
+    const lines   = text.trim().split('\n');
+    const rawHdrs = lines[0].split(',').map(h => h.replace(/"/g,'').trim());
 
-    if (parsed < 10) throw new Error('Too few valid rows parsed');
+    // Map common variations of column names
+    function findCol(options) {
+      for(const opt of options){
+        const i = rawHdrs.findIndex(h => h.toLowerCase()===opt.toLowerCase());
+        if(i >= 0) return i;
+      }
+      return -1;
+    }
 
-    setProgress(85, `Parsed ${parsed} games (${skipped} skipped)...`);
-    await new Promise(r => setTimeout(r, 50));
+    const iYear  = findCol(['Year_of_Release','Year','year']);
+    const iGenre = findCol(['Genre','genre']);
+    const iPub   = findCol(['Publisher','publisher']);
+    const iPlat  = findCol(['Platform','platform']);
+    const iNA    = findCol(['NA_Sales','NA Sales','na_sales']);
+    const iEU    = findCol(['EU_Sales','EU Sales','eu_sales']);
+    const iJP    = findCol(['JP_Sales','JP Sales','jp_sales']);
+    const iGS    = findCol(['Global_Sales','Global Sales','global_sales']);
+    const iCS    = findCol(['Critic_Score','Critic Score','critic_score']);
+    const iCC    = findCol(['Critic_Count','Critic Count','critic_count']);
+
+    console.log('Detected columns:', {iYear,iGenre,iPub,iPlat,iNA,iEU,iJP,iGS,iCS,iCC});
+    console.log('Headers found:', rawHdrs);
+
+    // If key columns missing, bail to fallback
+    if(iYear<0 || iGenre<0 || iCS<0) {
+      console.warn('Required columns not found. Headers:', rawHdrs);
+      throw new Error('Required columns (Year, Genre, Critic_Score) not found in CSV');
+    }
+
+    let parsed=0, skipped=0;
+    for(let i=1;i<lines.length;i++){
+      if(!lines[i].trim()) continue;
+      // split respecting quoted commas
+      const cols = [];
+      let cur='', inQ=false;
+      for(const ch of lines[i]){
+        if(ch==='"'){ inQ=!inQ; }
+        else if(ch===',' && !inQ){ cols.push(cur.trim()); cur=''; }
+        else{ cur+=ch; }
+      }
+      cols.push(cur.trim());
+
+      const yr    = parseInt(cols[iYear]);
+      const cs    = parseFloat(cols[iCS]);
+      const cc    = iCC>=0 ? (parseInt(cols[iCC])||10) : 10;
+      const na    = iNA>=0 ? (parseFloat(cols[iNA])||0) : 0;
+      const eu    = iEU>=0 ? (parseFloat(cols[iEU])||0) : 0;
+      const jp    = iJP>=0 ? (parseFloat(cols[iJP])||0) : 0;
+      const gs    = iGS>=0 ? (parseFloat(cols[iGS])||0) : na+eu+jp;
+      const genre = iGenre>=0 ? (cols[iGenre]||'') : '';
+      const pub   = iPub>=0   ? (cols[iPub]  ||'') : 'Unknown';
+      const plat  = iPlat>=0  ? (cols[iPlat] ||'') : 'Unknown';
+
+      if(isNaN(yr)||yr<1975||yr>2022){ skipped++; continue; }
+      if(!genre||genre==='N/A'||genre==='NA'){ skipped++; continue; }
+      if(isNaN(cs)||cs<=0){ skipped++; continue; }
+
+      RAW.push({yr,genre,pub,plat,cs,cc,na,eu,jp,gs});
+      parsed++;
+    }
+
+    clearTimeout(timeout);
+
+    if(parsed < 10) throw new Error(`Only ${parsed} valid rows — check CSV format`);
+
+    setProgress(85, `Loaded ${parsed} games...`);
+    await new Promise(r => setTimeout(r, 40));
 
     populateFilters();
-    setProgress(100, `✔ ${parsed} games loaded from real dataset.`);
+    setProgress(100, `✔ ${parsed} real games loaded!`);
 
-    setTimeout(() => {
-      document.getElementById('loadOverlay').style.display = 'none';
+    setTimeout(()=>{
+      document.getElementById('loadOverlay').style.display='none';
       updateRangeFill();
       redrawAll();
     }, 500);
 
   } catch(err) {
-    setProgress(0, '');
-    document.getElementById('loadStatus').textContent = '';
+    clearTimeout(timeout);
+    console.error('CSV load error:', err.message);
+    setProgress(0,'');
+    document.getElementById('loadStatus').textContent = 'Error: ' + err.message;
     document.getElementById('loadFallback').style.display = 'block';
-    console.warn('CSV load failed:', err.message);
   }
 }
 
-populateSelect('genreFilter',GENRES);
-populateSelect('pubFilter',PUBLISHERS);
-populateSelect('platFilter',PLATFORMS);
+
 
 // ═══════════════════════════════════════════════
 // STATE
